@@ -1,3 +1,6 @@
+*.pt filter=lfs diff=lfs merge=lfs -text
+*.pptx filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
 /T2600841-莫莫伽统治世界-【A27】基于无人机实时航拍的目标智能检测与识别系统【西安电子科技大学】-测试报告/DroneVehicle/weights/best.pt filter=lfs diff=lfs merge=lfs -text
 /T2600841-莫莫伽统治世界-【A27】基于无人机实时航拍的目标智能检测与识别系统【西安电子科技大学】-测试报告/Visdrone/weights/best.pt filter=lfs diff=lfs merge=lfs -text
 /T2600841-莫莫伽统治世界-【A27】基于无人机实时航拍的目标智能检测与识别系统【西安电子科技大学】-测试报告/Visdrone/weights/last.pt filter=lfs diff=lfs merge=lfs -text
