@@ -36,7 +36,7 @@ def inspect(path):
         print(f"   层数 {engine.num_layers}")
         for k, v in prec.most_common():
             print(f"     {k:8s} {v:5d}")
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         print(f"   (层信息不可用: {type(e).__name__}: {e})")
 
     # 引擎设备显存需求（真实部署指标）

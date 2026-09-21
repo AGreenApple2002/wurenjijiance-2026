@@ -1,5 +1,5 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
-"""无人机航拍小目标检测的自定义结构化模块（实验代码）。
+"""无人机航拍小目标检测的自定义结构化模块（实验代码）。.
 
 本文件在 YOLO26 上新增两个模块，用于「小目标与中远距目标」的感知增强：
 
@@ -29,8 +29,8 @@
 import math
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 
 from .conv import Conv, autopad
 
@@ -38,7 +38,7 @@ __all__ = ("CGBlockAttn", "LBDown")
 
 
 class LBDown(nn.Module):
-    """Learnable Bilateral Downsample：可学习的双边加权 1/2 下采样。
+    """Learnable Bilateral Downsample：可学习的双边加权 1/2 下采样。.
 
     Args:
         c1 (int): 输入通道数。
@@ -64,7 +64,7 @@ class LBDown(nn.Module):
     default_act = nn.SiLU()
 
     def __init__(self, c1, c2, k=3, act=True):
-        """初始化偏移预测、强度响应、双边参数与输出投影。"""
+        """初始化偏移预测、强度响应、双边参数与输出投影。."""
         super().__init__()
         self.offset = nn.Conv2d(c1, 8, k, 1, autopad(k), bias=True)  # 4 点 x 2 方向
         self.offset_scale = 0.5  # 亚像素偏移幅度上限（单位：输入像素）
@@ -74,7 +74,7 @@ class LBDown(nn.Module):
         self.project = Conv(c1, c2, 1, 1, act=act)
 
     def forward(self, x):
-        """对输入特征图做双边加权的 1/2 下采样。
+        """对输入特征图做双边加权的 1/2 下采样。.
 
         Args:
             x (torch.Tensor): 输入张量，形状为 (B, C1, H, W)。
@@ -114,10 +114,9 @@ class LBDown(nn.Module):
 
 
 class CGBlockAttn(nn.Module):
-    """Coarse-Grained Block Attention：块级粗粒度注意力的轻量长程上下文模块。
+    """Coarse-Grained Block Attention：块级粗粒度注意力的轻量长程上下文模块。.
 
-    不重叠地按 ``block x block`` 划分特征图，块内平均池化得到粗粒度 token（token 数约为
-    ``H*W/block^2``），在 token 上做多头自注意力，再广播回像素并用逐像素门控残差相加。
+    不重叠地按 ``block x block`` 划分特征图，块内平均池化得到粗粒度 token（token 数约为 ``H*W/block^2``），在 token 上做多头自注意力，再广播回像素并用逐像素门控残差相加。
     模块输出通道与输入保持一致，可直接插在 backbone/neck 任意位置。
 
     Args:
@@ -142,7 +141,7 @@ class CGBlockAttn(nn.Module):
     """
 
     def __init__(self, c1, c2=None, block=8, num_heads=4, gate_bias=-2.0):
-        """初始化注意力投影、门控与归一化层。"""
+        """初始化注意力投影、门控与归一化层。."""
         super().__init__()
         c2 = c1 if c2 is None else c2
         if c1 != c2:
@@ -164,7 +163,7 @@ class CGBlockAttn(nn.Module):
         nn.init.zeros_(self.proj.bias)
 
     def _to_tokens(self, x):
-        """把 (B,C,H,W) 按不重叠块池化成 (B,C,H/bs*W/bs) 的粗粒度 token。"""
+        """把 (B,C,H,W) 按不重叠块池化成 (B,C,H/bs*W/bs) 的粗粒度 token。."""
         b, c, h, w = x.shape
         bs = self.block
         pad_h, pad_w = (bs - h % bs) % bs, (bs - w % bs) % bs
@@ -175,7 +174,7 @@ class CGBlockAttn(nn.Module):
         return blocks.mean(dim=-1), (hp, wp)
 
     def forward(self, x):
-        """在粗粒度块 token 上做自注意力，并广播回像素后残差相加。
+        """在粗粒度块 token 上做自注意力，并广播回像素后残差相加。.
 
         Args:
             x (torch.Tensor): 输入张量，形状为 (B, C1, H, W)。
