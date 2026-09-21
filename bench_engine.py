@@ -15,7 +15,6 @@ import argparse
 import statistics as st
 import time
 
-import numpy as np
 import tensorrt as trt
 import torch
 
@@ -28,11 +27,10 @@ DEFAULT_ENGINES = [
 
 
 class Bench:
-    """一个 engine 的推理基准。
+    """一个 engine 的推理基准。.
 
-    注意：TensorRT 11 的 Python 绑定里 `execute_async_v3` 每次调用有 ~3.5ms 固定开销
-    （远高于 GPU 实际计算时间），所以"直接调用"测出来的是 CPU 绑定开销而非 GPU 算力。
-    用 CUDA Graph 捕获后 replay，能把这个开销降到 ~0.02ms，得到真实 GPU 推理耗时。
+    注意：TensorRT 11 的 Python 绑定里 `execute_async_v3` 每次调用有 ~3.5ms 固定开销 （远高于 GPU 实际计算时间），所以"直接调用"测出来的是 CPU 绑定开销而非 GPU 算力。 用
+    CUDA Graph 捕获后 replay，能把这个开销降到 ~0.02ms，得到真实 GPU 推理耗时。
     """
 
     def __init__(self, path: str):
@@ -65,7 +63,7 @@ class Bench:
         self.ctx.set_tensor_address(self.out_name, self.d_out.data_ptr())
 
     def _time(self, fn, iters: int) -> float:
-        """用 CUDA Event 给 iters 次调用整体计时，返回单次毫秒数。"""
+        """用 CUDA Event 给 iters 次调用整体计时，返回单次毫秒数。."""
         fn()  # 触发一次，确保 shape 解析完成
         torch.cuda.synchronize()
         start = torch.cuda.Event(enable_timing=True)
@@ -78,7 +76,7 @@ class Bench:
         return start.elapsed_time(end) / iters
 
     def _cpu_time(self, fn, iters: int) -> float:
-        """纯 CPU 侧耗时（调用返回即计时结束，不等 GPU）。"""
+        """纯 CPU 侧耗时（调用返回即计时结束，不等 GPU）。."""
         fn()
         self.stream.synchronize()
         t0 = time.perf_counter()
@@ -89,7 +87,7 @@ class Bench:
         return dt
 
     def _make_graph(self):
-        """把一次推理捕获成 CUDA Graph，绕开 Python 绑定的逐次调用开销。
+        """把一次推理捕获成 CUDA Graph，绕开 Python 绑定的逐次调用开销。.
 
         返回一个 replay 闭包 —— 必须在捕获所用的同一条流上 replay，
         否则 CUDA Event 会记在空流上，测出假的超低耗时。
@@ -146,7 +144,7 @@ class Bench:
             replay = self._make_graph()
             out["infer_graph"] = med(replay)
             out["infer_graph_cpu"] = self._cpu_time(replay, iters)
-        except Exception as ex:  # noqa: BLE001
+        except Exception as ex:
             out["infer_graph"] = float("nan")
             out["graph_err"] = f"{type(ex).__name__}: {ex}"
         return out
@@ -191,20 +189,22 @@ def main():
         print("-" * 80)
         for p, _, _, r in rows:
             g = r["infer_graph"]
-            print(f"{p.split('/')[-1]:40s} {g:8.3f}ms {r['infer_direct']:8.3f}ms "
-                  f"{1000 / g:7.1f} {b0 / g:8.2f}x")
+            print(f"{p.split('/')[-1]:40s} {g:8.3f}ms {r['infer_direct']:8.3f}ms {1000 / g:7.1f} {b0 / g:8.2f}x")
         print()
         print("说明: 'GPU推理' 用 CUDA Graph 测得，是真实 GPU 计算时间；")
         print("      '直接调用' 含 TensorRT 11 Python 绑定每次 ~3.5ms 的固定开销。")
 
     if a.csv:
         with open(a.csv, "w") as f:
-            f.write("engine,in_shape,mem_mib,h2d_ms,d2h_ms,infer_graph_ms,infer_direct_ms,"
-                    "infer_cpu_ms,full_ms,gpu_fps\n")
+            f.write(
+                "engine,in_shape,mem_mib,h2d_ms,d2h_ms,infer_graph_ms,infer_direct_ms,infer_cpu_ms,full_ms,gpu_fps\n"
+            )
             for p, s, m, r in rows:
-                f.write(f"{p},{'x'.join(map(str, s))},{m:.2f},{r['h2d']:.4f},{r['d2h']:.4f},"
-                        f"{r['infer_graph']:.4f},{r['infer_direct']:.4f},{r['infer_cpu']:.4f},"
-                        f"{r['full']:.4f},{1000 / r['infer_graph']:.1f}\n")
+                f.write(
+                    f"{p},{'x'.join(map(str, s))},{m:.2f},{r['h2d']:.4f},{r['d2h']:.4f},"
+                    f"{r['infer_graph']:.4f},{r['infer_direct']:.4f},{r['infer_cpu']:.4f},"
+                    f"{r['full']:.4f},{1000 / r['infer_graph']:.1f}\n"
+                )
         print(f"\n已导出 {a.csv}")
 
 

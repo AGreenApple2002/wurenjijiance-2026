@@ -1,4 +1,4 @@
-"""基线 vs 自定义结构：ONNX 导出 -> trtexec 构建 -> TensorRT 实测延迟 + PyTorch 数值一致性。
+"""基线 vs 自定义结构：ONNX 导出 -> trtexec 构建 -> TensorRT 实测延迟 + PyTorch 数值一致性。.
 
 为什么单独写这个脚本：
   1) TensorRT 11 的 trtexec 已经没有 --fp16/--int8 这类构建期精度开关（网络强类型化），
@@ -33,7 +33,7 @@ TRTEXEC = f"{TRT_ROOT}/bin/trtexec"
 
 
 def export_onnx(cfg: str, out: Path, imgsz: int, opset: int, quantize: int | None) -> Path:
-    """导出一个 ONNX（可选 fp16），返回产物路径。"""
+    """导出一个 ONNX（可选 fp16），返回产物路径。."""
     overrides = {"format": "onnx", "imgsz": imgsz, "opset": opset, "simplify": False, "dynamic": False}
     if quantize:
         overrides["quantize"] = quantize
@@ -46,7 +46,7 @@ def export_onnx(cfg: str, out: Path, imgsz: int, opset: int, quantize: int | Non
 
 
 def build_engine(onnx: Path, engine: Path, workspace_mb: int = 2048) -> str:
-    """调用 trtexec 构建 engine，返回是否通过。"""
+    """调用 trtexec 构建 engine，返回是否通过。."""
     cmd = [
         TRTEXEC,
         f"--onnx={onnx}",
@@ -63,7 +63,7 @@ def build_engine(onnx: Path, engine: Path, workspace_mb: int = 2048) -> str:
 
 
 def run_engine(engine_path: Path, x: torch.Tensor, iters: int = 50) -> tuple[np.ndarray, float, float]:
-    """用 TensorRT Python API 跑 engine，返回 (输出, 平均延迟 ms, 峰值显存 MiB)。"""
+    """用 TensorRT Python API 跑 engine，返回 (输出, 平均延迟 ms, 峰值显存 MiB)。."""
     import tensorrt as trt
 
     logger = trt.Logger(trt.Logger.ERROR)
@@ -107,7 +107,7 @@ def run_engine(engine_path: Path, x: torch.Tensor, iters: int = 50) -> tuple[np.
 
 
 def main() -> None:
-    """导出 -> 构建 -> 基准测试 -> 与 PyTorch 比对。"""
+    """导出 -> 构建 -> 基准测试 -> 与 PyTorch 比对。."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--cfg", required=True)
     ap.add_argument("--tag", required=True)
@@ -143,7 +143,9 @@ def main() -> None:
     if pt_out.shape == trt_out.shape:
         diff = np.abs(pt_out - trt_out)
         denom = np.maximum(np.abs(pt_out), 1e-6)
-        print(f"      max|Δ| = {diff.max():.3e}, mean|Δ| = {diff.mean():.3e}, max relative = {(diff / denom).max():.3e}")
+        print(
+            f"      max|Δ| = {diff.max():.3e}, mean|Δ| = {diff.mean():.3e}, max relative = {(diff / denom).max():.3e}"
+        )
     else:
         print(f"      形状不同，跳过逐元素比较：torch {pt_out.shape} vs trt {trt_out.shape}")
 

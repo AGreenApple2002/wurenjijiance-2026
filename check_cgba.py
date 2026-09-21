@@ -1,4 +1,4 @@
-"""结构改动自检脚本：对比官方 yolo26 与自定义 yolo26-cgba（LBDown + CGBlockAttn）。
+"""结构改动自检脚本：对比官方 yolo26 与自定义 yolo26-cgba（LBDown + CGBlockAttn）。.
 
 检查内容：
   1) 两个配置能否正常 parse_model 并前向（end2end Detect 输出形状）
@@ -25,7 +25,7 @@ PAIRS = [("baseline(yolo26n)", BASE_CFG), ("custom(ldown+cgattn)", CUSTOM_CFG)]
 
 
 def flops_of(model: torch.nn.Module, imgsz: int) -> float:
-    """用 thop 统计 GFLOPs，未安装时返回 nan。"""
+    """用 thop 统计 GFLOPs，未安装时返回 nan。."""
     try:
         from thop import profile
     except ImportError:
@@ -36,7 +36,7 @@ def flops_of(model: torch.nn.Module, imgsz: int) -> float:
 
 
 def count_modules(model: torch.nn.Module) -> dict[str, int]:
-    """统计关键模块的出现次数。"""
+    """统计关键模块的出现次数。."""
     out: dict[str, int] = {}
     for name in ("LBDown", "CGBlockAttn"):
         out[name] = sum(1 for m in model.modules() if type(m).__name__ == name)

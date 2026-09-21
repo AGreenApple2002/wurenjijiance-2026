@@ -64,7 +64,8 @@ e = rt.deserialize_cuda_engine(open("yolo26n-fp16.engine", "rb").read())
 ctx = e.create_execution_context()
 n_in = e.get_tensor_name(0)
 n_out = next(
-    e.get_tensor_name(i) for i in range(e.num_io_tensors)
+    e.get_tensor_name(i)
+    for i in range(e.num_io_tensors)
     if e.get_tensor_mode(e.get_tensor_name(i)) == trt.TensorIOMode.OUTPUT
 )
 d_in = torch.empty(tuple(e.get_tensor_shape(n_in)), dtype=torch.float32, device="cuda")
@@ -74,10 +75,13 @@ ctx.set_tensor_address(n_out, d_out.data_ptr())
 timeit("⑤ TRT execute_async_v3", lambda: ctx.execute_async_v3(s.cuda_stream))
 
 # --- ⑥ 重复 set_tensor_address 的开销 ---
-timeit("⑥ TRT set_tensor_address x2", lambda: (
-    ctx.set_tensor_address(n_in, d_in.data_ptr()),
-    ctx.set_tensor_address(n_out, d_out.data_ptr()),
-))
+timeit(
+    "⑥ TRT set_tensor_address x2",
+    lambda: (
+        ctx.set_tensor_address(n_in, d_in.data_ptr()),
+        ctx.set_tensor_address(n_out, d_out.data_ptr()),
+    ),
+)
 
 print()
 print("说明：① 是纯 Python 基线；②③ 是 torch 的 CUDA kernel 入队；")

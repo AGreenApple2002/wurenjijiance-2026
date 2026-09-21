@@ -13,16 +13,16 @@ PyTorch 数值一致性比对的全链路验证。
 
 ## 2. 改动清单（含行号）
 
-| 文件 | 状态 | 内容 |
-|---|---|---|
-| `ultralytics/nn/modules/cgba.py` | **新增 203 行** | `LBDown`（40-113）、`CGBlockAttn`（116-203）；`__all__` 在第 36 行 |
-| `ultralytics/cfg/models/26/yolo26-cgba.yaml` | **新增 56 行** | 自定义模型配置（对照物：官方 `yolo26.yaml`） |
-| `ultralytics/nn/modules/__init__.py` | 修改 | L63 `from .cgba import CGBlockAttn, LBDown`；L120 `"CGBlockAttn"`；L168 `"LBDown"` |
-| `ultralytics/nn/tasks.py` | 修改 | L44、L61 导入；**L2068-2069 加入 `parse_model` 的 `base_modules`**（关键，决定 c1/c2 与 width 缩放） |
-| `check_cgba.py` | 新增 | 结构自检：前向、参数量、GFLOPs、延迟、峰值显存 |
-| `bench_trt.py` | 新增 | 导出 ONNX → trtexec 构建 → TRT 实测 → PyTorch 一致性比对 |
-| `export_cgba_onnx.py` | 新增 | 仅导出 ONNX 的小工具 |
-| `EXPERIMENT_NOTES.md` | 新增 | 实验记录 + 真实困难清单 |
+| 文件                                         | 状态            | 内容                                                                                                 |
+| -------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------- |
+| `ultralytics/nn/modules/cgba.py`             | **新增 203 行** | `LBDown`（40-113）、`CGBlockAttn`（116-203）；`__all__` 在第 36 行                                   |
+| `ultralytics/cfg/models/26/yolo26-cgba.yaml` | **新增 56 行**  | 自定义模型配置（对照物：官方 `yolo26.yaml`）                                                         |
+| `ultralytics/nn/modules/__init__.py`         | 修改            | L63 `from .cgba import CGBlockAttn, LBDown`；L120 `"CGBlockAttn"`；L168 `"LBDown"`                   |
+| `ultralytics/nn/tasks.py`                    | 修改            | L44、L61 导入；**L2068-2069 加入 `parse_model` 的 `base_modules`**（关键，决定 c1/c2 与 width 缩放） |
+| `check_cgba.py`                              | 新增            | 结构自检：前向、参数量、GFLOPs、延迟、峰值显存                                                       |
+| `bench_trt.py`                               | 新增            | 导出 ONNX → trtexec 构建 → TRT 实测 → PyTorch 一致性比对                                             |
+| `export_cgba_onnx.py`                        | 新增            | 仅导出 ONNX 的小工具                                                                                 |
+| `EXPERIMENT_NOTES.md`                        | 新增            | 实验记录 + 真实困难清单                                                                              |
 
 ## 3. 模块语义
 
@@ -53,12 +53,12 @@ PyTorch 数值一致性比对的全链路验证。
 
 `ultralytics/cfg/models/26/yolo26-cgba.yaml` 相对官方 `yolo26.yaml`：
 
-| 层 | 官方 | 本配置 |
-|---|---|---|
-| 0 / 1 | `Conv [64,3,2]` / `Conv [128,3,2]` | **`LBDown [64]` / `LBDown [128]`** |
-| 5 / 8 | —（无此层） | **`CGBlockAttn [512, 8, 4]`**（P3、P4 级） |
-| head 各 `Concat` 的 from | 6 / 4 / 13 / 10 | **8 / 5 / 15 / 12** |
-| 检测头 | `[[16,19,22], Detect]` | **`[[18,21,24], Detect]`** |
+| 层                       | 官方                               | 本配置                                     |
+| ------------------------ | ---------------------------------- | ------------------------------------------ |
+| 0 / 1                    | `Conv [64,3,2]` / `Conv [128,3,2]` | **`LBDown [64]` / `LBDown [128]`**         |
+| 5 / 8                    | —（无此层）                        | **`CGBlockAttn [512, 8, 4]`**（P3、P4 级） |
+| head 各 `Concat` 的 from | 6 / 4 / 13 / 10                    | **8 / 5 / 15 / 12**                        |
+| 检测头                   | `[[16,19,22], Detect]`             | **`[[18,21,24], Detect]`**                 |
 
 新增层会让后面所有层的索引 +2（P3 处插一层）/+4（P4 处再插一层），**head 中每处 `from`
 都必须同步顺延**，漏改会导致通道拼接数量错误。
@@ -72,8 +72,8 @@ cd ultralytics-main
 # TensorRT SDK：需自行下载并解压（trtexec 在该目录 bin/ 下），
 #   本机通过 ~/.bashrc 设置：export TRT_ROOT=/path/to/TensorRT-11.0.0.114
 
-conda run -n trt python check_cgba.py                       # 结构自检 + 参数量/GFLOPs/延迟/显存
-conda run -n trt python bench_trt.py --cfg ultralytics/cfg/models/26/yolo26.yaml       --tag base
+conda run -n trt python check_cgba.py # 结构自检 + 参数量/GFLOPs/延迟/显存
+conda run -n trt python bench_trt.py --cfg ultralytics/cfg/models/26/yolo26.yaml --tag base
 conda run -n trt python bench_trt.py --cfg ultralytics/cfg/models/26/yolo26-cgba.yaml --tag cgba
 # fp16 版本：追加 --quantize 16
 ```
@@ -82,9 +82,9 @@ conda run -n trt python bench_trt.py --cfg ultralytics/cfg/models/26/yolo26-cgba
 
 ## 6. 实测数据（RTX 4060 Laptop 8 GB，imgsz=640，batch=1）
 
-| 配置 | 参数量 | GFLOPs | PyTorch | TRT fp32 | TRT fp16 |
-|---|---|---|---|---|---|
-| baseline `yolo26n` | 2.572 M | 6.12 | 19.72 ms | 2.05 ms | 1.07 ms |
+| 配置                   | 参数量          | GFLOPs      | PyTorch         | TRT fp32        | TRT fp16        |
+| ---------------------- | --------------- | ----------- | --------------- | --------------- | --------------- |
+| baseline `yolo26n`     | 2.572 M         | 6.12        | 19.72 ms        | 2.05 ms         | 1.07 ms         |
 | `+LBDown +CGBlockAttn` | 2.669 M (+3.8%) | 7.04 (+15%) | 27.45 ms (+39%) | 2.88 ms (1.41x) | 1.65 ms (1.55x) |
 
 TRT 数值一致性（同输入，TRT vs PyTorch）：base fp32 `max|Δ|=3.05e-05`；cgba fp32 `1.83e-04`；

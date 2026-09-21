@@ -4,15 +4,15 @@
 
 ---
 
-| 项目 | 说明 |
-|---|---|
-| **课题方向** | 无人机航拍场景下的小目标检测 |
-| **基础框架** | Ultralytics YOLO26n（`ultralytics 8.4.143`） |
+| 项目         | 说明                                                          |
+| ------------ | ------------------------------------------------------------- |
+| **课题方向** | 无人机航拍场景下的小目标检测                                  |
+| **基础框架** | Ultralytics YOLO26n（`ultralytics 8.4.143`）                  |
 | **改进内容** | `LBDown`（可学习双边下采样）、`CGBlockAttn`（粗粒度块注意力） |
-| **部署目标** | NVIDIA TensorRT 11 强类型网络 |
-| **评估维度** | 结构开销、推理延迟、显存占用、数值一致性 |
-| **实验平台** | NVIDIA GeForce RTX 4060 Laptop (8 GB, Ada, sm_89) / WSL2 |
-| **文档版本** | v1.0 · 2026-09 |
+| **部署目标** | NVIDIA TensorRT 11 强类型网络                                 |
+| **评估维度** | 结构开销、推理延迟、显存占用、数值一致性                      |
+| **实验平台** | NVIDIA GeForce RTX 4060 Laptop (8 GB, Ada, sm_89) / WSL2      |
+| **文档版本** | v1.0 · 2026-09                                                |
 
 ---
 
@@ -174,12 +174,12 @@ $$
 
 #### 3.1.3 实现要点
 
-| 项目 | 实现方式 |
-|---|---|
-| 可微采样 | `F.grid_sample`，`align_corners=True`、`padding_mode="border"` |
+| 项目     | 实现方式                                                                            |
+| -------- | ----------------------------------------------------------------------------------- |
+| 可微采样 | `F.grid_sample`，`align_corners=True`、`padding_mode="border"`                      |
 | 偏移取值 | 仅在窗口中心位置采样偏移图（`off[:, :, 0::2, 0::2]`），避免对全分辨率偏移图二次采样 |
-| 参数量 | 少于其所替换的 stride-2 卷积（2 071 vs 5 136，减少 3 065） |
-| 导出形态 | ONNX 中生成 `GridSample` 节点，本配置共 16 个（2 层 × 4 采样点 × 2 次采样） |
+| 参数量   | 少于其所替换的 stride-2 卷积（2 071 vs 5 136，减少 3 065）                          |
+| 导出形态 | ONNX 中生成 `GridSample` 节点，本配置共 16 个（2 层 × 4 采样点 × 2 次采样）         |
 
 ### 3.2 `CGBlockAttn` — 粗粒度块注意力
 
@@ -215,12 +215,12 @@ $$
 
 #### 3.2.3 关键实现决策
 
-| 决策 | 依据 |
-|---|---|
-| **手写 `matmul + softmax`**，不调用 `nn.MultiheadAttention` | 后者的 ONNX 导出图包含动态 shape 与不支持算子，对 TensorRT 不友好 |
-| **门控偏置初始化为 $-2.0$，投影偏置初始化为 $0$** | 使 $\sigma(-2.0) \approx 0.119$、投影初始输出趋于零，模块在初始化时近似恒等映射，便于从预训练权重继续训练 |
-| **强制约束 $c_1 = c_2$** | 残差连接要求通道一致，否则构造时抛出 `ValueError` |
-| **BatchNorm 置于投影之后** | 归一化注意力输出分布，稳定残差分支的量级 |
+| 决策                                                        | 依据                                                                                                      |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **手写 `matmul + softmax`**，不调用 `nn.MultiheadAttention` | 后者的 ONNX 导出图包含动态 shape 与不支持算子，对 TensorRT 不友好                                         |
+| **门控偏置初始化为 $-2.0$，投影偏置初始化为 $0$**           | 使 $\sigma(-2.0) \approx 0.119$、投影初始输出趋于零，模块在初始化时近似恒等映射，便于从预训练权重继续训练 |
+| **强制约束 $c_1 = c_2$**                                    | 残差连接要求通道一致，否则构造时抛出 `ValueError`                                                         |
+| **BatchNorm 置于投影之后**                                  | 归一化注意力输出分布，稳定残差分支的量级                                                                  |
 
 ### 3.3 网络配置与索引重映射
 
@@ -228,15 +228,15 @@ $$
 
 **表 1 · 网络配置对照**
 
-| 层索引 | 官方 `yolo26.yaml` | 本工作 `yolo26-cgba.yaml` | 变更类型 |
-|---|---|---|---|
-| 0 | `Conv [64, 3, 2]` | `LBDown [64]` | 替换 |
-| 1 | `Conv [128, 3, 2]` | `LBDown [128]` | 替换 |
-| 5 | — | `CGBlockAttn [512, 8, 4]` | 新增（P3 级） |
-| 8 | — | `CGBlockAttn [512, 8, 4]` | 新增（P4 级） |
-| head `Concat` #1 | `from = 6, 4` | `from = 8, 5` | 索引顺延 +2 |
-| head `Concat` #2 | `from = 13, 10` | `from = 15, 12` | 索引顺延 +2 / +4 |
-| head `Detect` | `from = [16, 19, 22]` | `from = [18, 21, 24]` | 索引顺延 |
+| 层索引           | 官方 `yolo26.yaml`    | 本工作 `yolo26-cgba.yaml` | 变更类型         |
+| ---------------- | --------------------- | ------------------------- | ---------------- |
+| 0                | `Conv [64, 3, 2]`     | `LBDown [64]`             | 替换             |
+| 1                | `Conv [128, 3, 2]`    | `LBDown [128]`            | 替换             |
+| 5                | —                     | `CGBlockAttn [512, 8, 4]` | 新增（P3 级）    |
+| 8                | —                     | `CGBlockAttn [512, 8, 4]` | 新增（P4 级）    |
+| head `Concat` #1 | `from = 6, 4`         | `from = 8, 5`             | 索引顺延 +2      |
+| head `Concat` #2 | `from = 13, 10`       | `from = 15, 12`           | 索引顺延 +2 / +4 |
+| head `Detect`    | `from = [16, 19, 22]` | `from = [18, 21, 24]`     | 索引顺延         |
 
 > **索引重映射是本工程中最易出错的一环。** 新增层会使其后所有层索引顺延（P3 处插入层导致 +2，P4 处再插入导致 +4）。head 中每一处 `Concat` 的 `from` 字段都必须同步修正；任一遗漏都会导致通道拼接错误。该错误不会在模型构建或前向传播阶段抛出异常，而是静默产生错误的特征拼接结果。
 
@@ -244,9 +244,9 @@ $$
 
 新模块需要在框架中注册两个位置，二者缺一不可：
 
-| 注册点 | 文件 | 作用 |
-|---|---|---|
-| ① 模块导出 | `ultralytics/nn/modules/__init__.py` | 使模块类可被配置解析器检索 |
+| 注册点             | 文件                                                        | 作用                                   |
+| ------------------ | ----------------------------------------------------------- | -------------------------------------- |
+| ① 模块导出         | `ultralytics/nn/modules/__init__.py`                        | 使模块类可被配置解析器检索             |
 | ② **基础模块注册** | `ultralytics/nn/tasks.py` · `parse_model` 的 `base_modules` | 决定输入/输出通道推导与 width 缩放行为 |
 
 > 若仅完成 ① 而遗漏 ②，模型可以构建并运行，但**不会参与 width 缩放**（例如 `yolo26n` / `yolo26s` 的通道系数将不生效），导致不同规模配置下的行为不一致。
@@ -259,10 +259,10 @@ $$
 
 TensorRT 11 采用**强类型网络（strongly-typed network）**语义，取消了构建期的精度选择接口：
 
-| TensorRT 版本 | 构建期精度控制 | 说明 |
-|---|---|---|
-| ≤ 10 | `--fp16` / `--int8` | 构建期可指定精度 |
-| **11** | **仅剩 `--noTF32`** | `--stronglyTyped` 已废弃为 no-op；`--fp16` / `--int8` 报告 `Unknown option` |
+| TensorRT 版本 | 构建期精度控制      | 说明                                                                        |
+| ------------- | ------------------- | --------------------------------------------------------------------------- |
+| ≤ 10          | `--fp16` / `--int8` | 构建期可指定精度                                                            |
+| **11**        | **仅剩 `--noTF32`** | `--stronglyTyped` 已废弃为 no-op；`--fp16` / `--int8` 报告 `Unknown option` |
 
 **由此导出的关键结论**：在 TensorRT 11 下，**推理精度必须在 ONNX 导出阶段确定**，无法在引擎构建阶段调整。这一约束直接决定了整个部署链路的设计——所有精度路径都必须在 ONNX 图中显式表达。
 
@@ -270,12 +270,12 @@ TensorRT 11 采用**强类型网络（strongly-typed network）**语义，取消
 
 **表 2 · 精度路径对照**
 
-| 路径 | ONNX 图处理方式 | 工具 | 适用场景 |
-|---|---|---|---|
-| **FP32** | 不做处理 | `yolo export format=onnx` | 基线、数值对齐参考 |
-| **FP16** | 权重转换为 FP16，`keep_io_types=True` 保持 I/O 为 FP32 | `onnxconverter-common` / ModelOpt AutoCast | 本实验平台的最优性价比路径 |
-| **QAT INT8** | 训练期插入伪量化节点，导出带 Q/DQ 的 ONNX | NVIDIA ModelOpt（`quantize=8`） | 需要 INT8 算力的硬件 |
-| **INT8 + FP16** | 在 Q/DQ 图之上叠加 AutoCast | ModelOpt AutoCast | 消除 INT8↔FP32 格式转换开销 |
+| 路径            | ONNX 图处理方式                                        | 工具                                       | 适用场景                    |
+| --------------- | ------------------------------------------------------ | ------------------------------------------ | --------------------------- |
+| **FP32**        | 不做处理                                               | `yolo export format=onnx`                  | 基线、数值对齐参考          |
+| **FP16**        | 权重转换为 FP16，`keep_io_types=True` 保持 I/O 为 FP32 | `onnxconverter-common` / ModelOpt AutoCast | 本实验平台的最优性价比路径  |
+| **QAT INT8**    | 训练期插入伪量化节点，导出带 Q/DQ 的 ONNX              | NVIDIA ModelOpt（`quantize=8`）            | 需要 INT8 算力的硬件        |
+| **INT8 + FP16** | 在 Q/DQ 图之上叠加 AutoCast                            | ModelOpt AutoCast                          | 消除 INT8↔FP32 格式转换开销 |
 
 ### 4.3 量化感知训练
 
@@ -283,14 +283,14 @@ Ultralytics 框架内置量化感知训练（QAT）支持，其核心实现在�
 
 **表 3 · QAT 相关源码位置**（`ultralytics 8.4.143`）
 
-| 函数 | 位置 | 功能 |
-|---|---|---|
+| 函数          | 位置                       | 功能                                                |
+| ------------- | -------------------------- | --------------------------------------------------- |
 | `prepare_qat` | `utils/torch_utils.py:420` | 将 `Conv` / `Linear` 层替换为 ModelOpt 伪量化等价层 |
-| `is_qat` | `utils/torch_utils.py:461` | 判定模型是否携带伪量化模块 |
-| `qat_state` | `utils/torch_utils.py:470` | 提取量化转换状态与校准范围 |
-| `strip_qat` | `utils/torch_utils.py:494` | 序列化前剥离运行时生成的动态类 |
-| `restore_qat` | `utils/torch_utils.py:513` | 加载与断点续训时恢复量化状态 |
-| 训练触发点 | `engine/trainer.py:341` | `if self.args.quantize == 8:` → 调用 `prepare_qat` |
+| `is_qat`      | `utils/torch_utils.py:461` | 判定模型是否携带伪量化模块                          |
+| `qat_state`   | `utils/torch_utils.py:470` | 提取量化转换状态与校准范围                          |
+| `strip_qat`   | `utils/torch_utils.py:494` | 序列化前剥离运行时生成的动态类                      |
+| `restore_qat` | `utils/torch_utils.py:513` | 加载与断点续训时恢复量化状态                        |
+| 训练触发点    | `engine/trainer.py:341`    | `if self.args.quantize == 8:` → 调用 `prepare_qat`  |
 
 **三个值得记录的实现细节：**
 
@@ -301,7 +301,7 @@ Ultralytics 框架内置量化感知训练（QAT）支持，其核心实现在�
 **训练与导出命令：**
 
 ```bash
-conda activate base          # 需已安装 nvidia-modelopt
+conda activate base # 需已安装 nvidia-modelopt
 
 # 训练
 yolo train model=yolo26n.pt data=coco8.yaml quantize=8 epochs=1 imgsz=320 batch=4 device=0
@@ -337,15 +337,15 @@ Tactic 名称 `i8f32_i8i32_f32` 表明该层执行 INT8×INT8 → INT32 累加 �
 
 **表 4 · 实验环境**
 
-| 类别 | 配置 |
-|---|---|
-| GPU | NVIDIA GeForce RTX 4060 Laptop，8 GB GDDR6，Ada 架构（sm_89），24 SM |
-| 操作系统 | WSL2 (Linux) |
-| TensorRT | 11.0.0.114（完整 SDK，`trtexec` 命令行构建） |
-| 框架版本 | ultralytics 8.4.143 |
-| 环境 A（`trt`） | Python 3.12.14，torch 2.6.0+cu124，onnx 1.22.0，onnxruntime 1.30.0，onnxslim 0.1.96 |
-| 环境 B（`base`） | Python 3.13.13，torch 2.14.0+cu130，nvidia-modelopt 0.46.1，onnx 1.23.0 |
-| 输入规格 | $1 \times 3 \times 640 \times 640$，FP32，batch = 1 |
+| 类别             | 配置                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| GPU              | NVIDIA GeForce RTX 4060 Laptop，8 GB GDDR6，Ada 架构（sm_89），24 SM                |
+| 操作系统         | WSL2 (Linux)                                                                        |
+| TensorRT         | 11.0.0.114（完整 SDK，`trtexec` 命令行构建）                                        |
+| 框架版本         | ultralytics 8.4.143                                                                 |
+| 环境 A（`trt`）  | Python 3.12.14，torch 2.6.0+cu124，onnx 1.22.0，onnxruntime 1.30.0，onnxslim 0.1.96 |
+| 环境 B（`base`） | Python 3.13.13，torch 2.14.0+cu130，nvidia-modelopt 0.46.1，onnx 1.23.0             |
+| 输入规格         | $1 \times 3 \times 640 \times 640$，FP32，batch = 1                                 |
 
 > **环境分离说明：** QAT 训练与 ONNX 精度转换依赖 `nvidia-modelopt`，而 TensorRT 运行时依赖 `tensorrt` Python 绑定。二者对 PyTorch 版本的要求冲突（在 `trt` 环境中安装 `modelopt` 会将 torch 由 2.6.0 升级至 2.14.0 并引入整套 CUDA 13 运行时依赖）。因此本工作按职责拆分环境：`base` 负责训练与精度转换，`trt` 负责全部引擎构建、推理与基准测试。
 
@@ -353,27 +353,27 @@ Tactic 名称 `i8f32_i8i32_f32` 表明该层执行 INT8×INT8 → INT32 累加 �
 
 **表 5 · 测量方法与口径**
 
-| 测量对象 | 方法 | 口径说明 |
-|---|---|---|
+| 测量对象              | 方法                                                                    | 口径说明                                                                      |
+| --------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | TensorRT 延迟（权威） | `trtexec --loadEngine=<e> --avgRuns=300 --warmUp=2000 --iterations=300` | 取自 TensorRT profiler 的**纯核心计算时间**，`GPU Compute Time` 中位数 / 均值 |
-| TensorRT 延迟（拆解） | `bench_engine.py` | CUDA Event 计时；H2D 拷贝、推理、D2H 拷贝分离统计 |
-| **真实 GPU 计算时间** | CUDA Graph 捕获 + `replay` | 绕开 Python 绑定逐次调用开销（见 6.6 节） |
-| PyTorch 延迟 | `check_cgba.py` | 单次前向，CUDA Event 计时 |
-| 显存占用 | `engine.device_memory_size_v2` / PyTorch peak | 引擎反序列化后的设备显存需求 |
-| 数值一致性 | `compare_engines.py` | 同一随机输入下，各引擎输出与 FP32 参考引擎的逐元素绝对差 |
+| TensorRT 延迟（拆解） | `bench_engine.py`                                                       | CUDA Event 计时；H2D 拷贝、推理、D2H 拷贝分离统计                             |
+| **真实 GPU 计算时间** | CUDA Graph 捕获 + `replay`                                              | 绕开 Python 绑定逐次调用开销（见 6.6 节）                                     |
+| PyTorch 延迟          | `check_cgba.py`                                                         | 单次前向，CUDA Event 计时                                                     |
+| 显存占用              | `engine.device_memory_size_v2` / PyTorch peak                           | 引擎反序列化后的设备显存需求                                                  |
+| 数值一致性            | `compare_engines.py`                                                    | 同一随机输入下，各引擎输出与 FP32 参考引擎的逐元素绝对差                      |
 
 > **跨方法比较的限制：** `trtexec` 与 CUDA Graph 两种方法的绝对值不可直接比较（前者为 profiler 核心时间，后者为完整图执行时间，且预热时长不同）。**所有横向对比均在单一方法内部完成。**
 
 ### 5.3 评估指标定义
 
-| 符号 | 定义 |
-|---|---|
-| $P$ | 模型参数量（百万，M） |
-| $F$ | 理论计算量（GFLOPs），以 `thop.profile` 统计 |
-| $L_{\text{pt}}$ | PyTorch 单帧前向延迟（ms） |
-| $L_{\text{trt}}$ | TensorRT 引擎单帧推理延迟（ms） |
-| $M_{\text{peak}}$ | 峰值显存占用（MiB） |
-| $\Delta_{\max}$ | 数值一致性偏差：$\max_i \lvert y_i^{\text{TRT}} - y_i^{\text{PyTorch}} \rvert$ |
+| 符号              | 定义                                                                           |
+| ----------------- | ------------------------------------------------------------------------------ |
+| $P$               | 模型参数量（百万，M）                                                          |
+| $F$               | 理论计算量（GFLOPs），以 `thop.profile` 统计                                   |
+| $L_{\text{pt}}$   | PyTorch 单帧前向延迟（ms）                                                     |
+| $L_{\text{trt}}$  | TensorRT 引擎单帧推理延迟（ms）                                                |
+| $M_{\text{peak}}$ | 峰值显存占用（MiB）                                                            |
+| $\Delta_{\max}$   | 数值一致性偏差：$\max_i \lvert y_i^{\text{TRT}} - y_i^{\text{PyTorch}} \rvert$ |
 
 ### 5.4 对比基线
 
@@ -387,11 +387,11 @@ Tactic 名称 `i8f32_i8i32_f32` 表明该层执行 INT8×INT8 → INT32 累加 �
 
 **表 6 · 结构开销对比**（PyTorch，fp32，imgsz = 640，batch = 1）
 
-| 配置 | 参数量 $P$ | 计算量 $F$ | PyTorch 延迟 $L_{\text{pt}}$ | 峰值显存 $M_{\text{peak}}$ |
-|---|---|---|---|---|
-| 基线 `yolo26n` | 2.572 M | 6.12 GFLOPs | 19.72 ms | 83.5 MiB |
-| **`+LBDown +CGBlockAttn`** | **2.669 M** | **7.04 GFLOPs** | **27.45 ms** | **95.8 MiB** |
-| 相对变化 | **+3.77 %** | **+15.03 %** | **+39.20 %** | **+14.73 %** |
+| 配置                       | 参数量 $P$  | 计算量 $F$      | PyTorch 延迟 $L_{\text{pt}}$ | 峰值显存 $M_{\text{peak}}$ |
+| -------------------------- | ----------- | --------------- | ---------------------------- | -------------------------- |
+| 基线 `yolo26n`             | 2.572 M     | 6.12 GFLOPs     | 19.72 ms                     | 83.5 MiB                   |
+| **`+LBDown +CGBlockAttn`** | **2.669 M** | **7.04 GFLOPs** | **27.45 ms**                 | **95.8 MiB**               |
+| 相对变化                   | **+3.77 %** | **+15.03 %**    | **+39.20 %**                 | **+14.73 %**               |
 
 **分析：** 参数量增量极小（+3.8%），主要来自 `CGBlockAttn` 的 $q/k/v/\text{proj}/\text{gate}$ 五个 $1\times1$ 卷积；值得注意的是 `LBDown` 的参数量**少于**其所替换的 stride-2 卷积（2 071 vs 5 136）。
 
@@ -401,12 +401,12 @@ Tactic 名称 `i8f32_i8i32_f32` 表明该层执行 INT8×INT8 → INT32 累加 �
 
 **表 7 · TensorRT 引擎延迟**（`trtexec --loadEngine`，200 iters，中位数）
 
-| 引擎 | 精度 | $L_{\text{trt}}$ | 相对基线 | 加速比（vs fp32） |
-|---|---|---|---|---|
-| `base-fp32` | FP32 | 2.05 ms | 1.00× | — |
-| `cgba-fp32` | FP32 | 2.88 ms | **1.41×** | — |
-| `base-q16` | FP16 | **1.07 ms** | 1.00× | **1.92×** |
-| `cgba-q16` | FP16 | 1.65 ms | **1.55×** | 1.55× |
+| 引擎        | 精度 | $L_{\text{trt}}$ | 相对基线  | 加速比（vs fp32） |
+| ----------- | ---- | ---------------- | --------- | ----------------- |
+| `base-fp32` | FP32 | 2.05 ms          | 1.00×     | —                 |
+| `cgba-fp32` | FP32 | 2.88 ms          | **1.41×** | —                 |
+| `base-q16`  | FP16 | **1.07 ms**      | 1.00×     | **1.92×**         |
+| `cgba-q16`  | FP16 | 1.65 ms          | **1.55×** | 1.55×             |
 
 **分析：** 结构改进在 TensorRT 上的代价（1.41× / 1.55×）与 PyTorch 侧（1.39×）一致，说明该代价具有跨后端的稳定性。
 
@@ -416,12 +416,12 @@ Tactic 名称 `i8f32_i8i32_f32` 表明该层执行 INT8×INT8 → INT32 累加 �
 
 **表 8 · TensorRT 与 PyTorch 输出的数值偏差**
 
-| 配置 | $\Delta_{\max}$ | 最大相对偏差 |
-|---|---|---|
-| `base` fp32 | $3.05 \times 10^{-5}$ | $1.55 \times 10^{-6}$ |
+| 配置            | $\Delta_{\max}$                | 最大相对偏差          |
+| --------------- | ------------------------------ | --------------------- |
+| `base` fp32     | $3.05 \times 10^{-5}$          | $1.55 \times 10^{-6}$ |
 | **`cgba` fp32** | $\mathbf{1.83 \times 10^{-4}}$ | $7.51 \times 10^{-6}$ |
-| `base` fp16 | $1.53 \times 10^{-5}$ | $1.92 \times 10^{-3}$ |
-| `cgba` fp16 | $1.22 \times 10^{-4}$ | $1.92 \times 10^{-3}$ |
+| `base` fp16     | $1.53 \times 10^{-5}$          | $1.92 \times 10^{-3}$ |
+| `cgba` fp16     | $1.22 \times 10^{-4}$          | $1.92 \times 10^{-3}$ |
 
 **分析：** `LBDown` 使 TensorRT 与 PyTorch 之间的数值偏差放大约 6 倍（$3.05\times10^{-5} \to 1.83\times10^{-4}$）。该偏差量级在工程上可忽略，但其**增大的趋势本身具有意义**：它表明非标准算子（`GridSample`）在不同后端上的实现细节存在差异。
 
@@ -431,20 +431,20 @@ Tactic 名称 `i8f32_i8i32_f32` 表明该层执行 INT8×INT8 → INT32 累加 �
 
 **表 9 · 四条精度路径的引擎特性**（`yolo26n`，$1\times3\times640\times640$）
 
-| 引擎 | 精度 | $L_{\text{trt}}$ | CUDA Graph | 引擎大小 | 设备显存 | INT8 权重层 |
-|---|---|---|---|---|---|---|
-| `yolo26n-my` | FP32 | 2.111 ms | 2.962 ms | 12.7 MB | 17.8 MiB | 0 |
-| **`yolo26n-fp16`** | **FP16** | **1.098 ms** | **2.323 ms** | 7.8 MB | 9.1 MiB | 0 |
-| `best-int8` | QAT INT8 | 1.273 ms | 2.607 ms | 5.7 MB | 9.1 MiB | **78 / 207** |
-| `int8-fp16cast` | INT8+FP16 | 1.122 ms | 2.274 ms | 5.5 MB | 7.1 MiB | 78 / 207 |
+| 引擎               | 精度      | $L_{\text{trt}}$ | CUDA Graph   | 引擎大小 | 设备显存 | INT8 权重层  |
+| ------------------ | --------- | ---------------- | ------------ | -------- | -------- | ------------ |
+| `yolo26n-my`       | FP32      | 2.111 ms         | 2.962 ms     | 12.7 MB  | 17.8 MiB | 0            |
+| **`yolo26n-fp16`** | **FP16**  | **1.098 ms**     | **2.323 ms** | 7.8 MB   | 9.1 MiB  | 0            |
+| `best-int8`        | QAT INT8  | 1.273 ms         | 2.607 ms     | 5.7 MB   | 9.1 MiB  | **78 / 207** |
+| `int8-fp16cast`    | INT8+FP16 | 1.122 ms         | 2.274 ms     | 5.5 MB   | 7.1 MiB  | 78 / 207     |
 
 **表 10 · 量化引入的输出偏差**（随机输入，以 FP32 引擎为参考）
 
-| 引擎 | 框回归通道 $[0{:}4]$ $\Delta_{\max}$ | 类别分数通道 $[4{:}]$ $\Delta_{\max}$ |
-|---|---|---|
-| FP16 | 5.72 | 0.024 |
-| INT8 | 125.9 | 0.302 |
-| INT8+FP16 | 132.5 | 0.358 |
+| 引擎      | 框回归通道 $[0{:}4]$ $\Delta_{\max}$ | 类别分数通道 $[4{:}]$ $\Delta_{\max}$ |
+| --------- | ------------------------------------ | ------------------------------------- |
+| FP16      | 5.72                                 | 0.024                                 |
+| INT8      | 125.9                                | 0.302                                 |
+| INT8+FP16 | 132.5                                | 0.358                                 |
 
 **分析：**
 
@@ -458,11 +458,11 @@ Tactic 名称 `i8f32_i8i32_f32` 表明该层执行 INT8×INT8 → INT32 累加 �
 
 **表 11 · 端到端帧率对比**（`test_cam.mp4`，90 帧，含解码、预处理、推理、后处理与绘制）
 
-| 引擎 | 总耗时 | 单帧耗时 | 帧率 |
-|---|---|---|---|
-| FP32 | 1.80 s | 20.0 ms | 50.1 FPS |
-| FP16 | 1.82 s | 20.3 ms | 49.4 FPS |
-| INT8 | 1.74 s | 19.3 ms | 51.8 FPS |
+| 引擎 | 总耗时 | 单帧耗时 | 帧率     |
+| ---- | ------ | -------- | -------- |
+| FP32 | 1.80 s | 20.0 ms  | 50.1 FPS |
+| FP16 | 1.82 s | 20.3 ms  | 49.4 FPS |
+| INT8 | 1.74 s | 19.3 ms  | 51.8 FPS |
 
 **分析：** 三种引擎的端到端帧率差异（49.4 – 51.8 FPS）落在测量噪声范围内。结合表 9 的引擎延迟数据可知，GPU 推理仅占总耗时的 5%–10%，其余 90% 以上消耗于视频解码、letterbox 预处理、NMS 后处理与结果绘制。
 
@@ -474,13 +474,13 @@ Tactic 名称 `i8f32_i8i32_f32` 表明该层执行 INT8×INT8 → INT32 累加 �
 
 **表 12 · Python → CUDA 调用开销对照**（各 2 000 次取平均）
 
-| 操作 | 单次开销 | 说明 |
-|---|---|---|
-| 纯 Python 空循环 | 0.0000 ms | 计时基线 |
-| **torch CUDA kernel 入队** | **0.020 ms** | 正常水平参照 |
-| H2D 拷贝（$1\times3\times640\times640$） | 0.582 ms | 带宽受限 |
+| 操作                                      | 单次开销     | 说明                     |
+| ----------------------------------------- | ------------ | ------------------------ |
+| 纯 Python 空循环                          | 0.0000 ms    | 计时基线                 |
+| **torch CUDA kernel 入队**                | **0.020 ms** | 正常水平参照             |
+| H2D 拷贝（$1\times3\times640\times640$）  | 0.582 ms     | 带宽受限                 |
 | **`IExecutionContext::execute_async_v3`** | **3.637 ms** | **约为 torch 的 180 倍** |
-| `set_tensor_address` × 2 | 0.0005 ms | 可忽略 |
+| `set_tensor_address` × 2                  | 0.0005 ms    | 可忽略                   |
 
 **结论：** TensorRT 11 的 Python 绑定在每次 `execute_async_v3` 调用中引入约 3.6 ms 的固定开销。该开销**大于 GPU 的实际计算时间**（FP16 引擎 1.098 ms），导致 GPU 处于饥饿等待状态——连续提交 500 次推理，CUDA Event 测得单次耗时为 3.578 ms，这是 CPU 提交速率的上限而非 GPU 算力上限。
 
@@ -493,12 +493,13 @@ Tactic 名称 `i8f32_i8i32_f32` 表明该层执行 INT8×INT8 → INT32 累加 �
 
 **表 13 · CUDA Graph 加速效果**
 
-| 引擎 | `execute_async_v3` 直接调用 | CUDA Graph 回放 | 加速比 |
-|---|---|---|---|
-| FP16 | 3.984 ms | **1.449 ms** | **2.75×** |
-| INT8 | 4.423 ms | 2.820 ms | 1.57× |
+| 引擎 | `execute_async_v3` 直接调用 | CUDA Graph 回放 | 加速比    |
+| ---- | --------------------------- | --------------- | --------- |
+| FP16 | 3.984 ms                    | **1.449 ms**    | **2.75×** |
+| INT8 | 4.423 ms                    | 2.820 ms        | 1.57×     |
 
 > **实现注意事项：** `torch.cuda.CUDAGraph.replay()` 默认在**当前流**上回放，而 CUDA Event 记录在自定义流上，二者不一致会导致计时完全落空（实测得到 $0.019$ ms / 53 983 FPS 的错误结果）。正确的做法是显式限定作用域：
+>
 > ```python
 > with torch.cuda.stream(self.stream):
 >     g.replay()
@@ -527,10 +528,10 @@ Tactic 名称 `i8f32_i8i32_f32` 表明该层执行 INT8×INT8 → INT32 累加 �
 **该行为的源码依据**位于 `ultralytics/utils/export/engine.py`：
 
 ```python
-use_fp16  = ... and quantize == 16
-calibrate = use_int8 and not qdq      # QAT 图已包含 Q/DQ → calibrate = False
+use_fp16 = ... and quantize == 16
+calibrate = use_int8 and not qdq  # QAT 图已包含 Q/DQ → calibrate = False
 if is_trt11 and (use_fp16 or calibrate):
-    onnx_file = modelopt_quantize_onnx(...)   # QAT 模型不会进入此分支
+    onnx_file = modelopt_quantize_onnx(...)  # QAT 模型不会进入此分支
 ```
 
 即：**在 TensorRT 11 下，QAT 模型不会自动获得 FP16 AutoCast**，未量化层将维持在 FP32。本工作验证了补救方案（在 Q/DQ 图上手动叠加 AutoCast），可将延迟由 1.315 ms 降至 1.122 ms，但**仅能达到与纯 FP16 相当的水平**。
@@ -543,12 +544,12 @@ if is_trt11 and (use_fp16 or calibrate):
 
 **表 14 · 分层瓶颈定位方法**
 
-| 层级 | 测量对象 | 工具 | 典型发现 |
-|---|---|---|---|
-| 引擎层 | 纯 GPU 计算时间 | `trtexec --loadEngine` | FP16 引擎 1.098 ms |
-| 绑定层 | API 调用开销 | `diag_overhead.py` | `execute_async_v3` 3.637 ms |
-| 数据层 | H2D / D2H 拷贝 | `bench_engine.py` | 各约 0.5 ms |
-| 链路层 | 端到端耗时 | `trt_webcam.py --no-show` | 20.0 ms/帧 |
+| 层级   | 测量对象        | 工具                      | 典型发现                    |
+| ------ | --------------- | ------------------------- | --------------------------- |
+| 引擎层 | 纯 GPU 计算时间 | `trtexec --loadEngine`    | FP16 引擎 1.098 ms          |
+| 绑定层 | API 调用开销    | `diag_overhead.py`        | `execute_async_v3` 3.637 ms |
+| 数据层 | H2D / D2H 拷贝  | `bench_engine.py`         | 各约 0.5 ms                 |
+| 链路层 | 端到端耗时      | `trt_webcam.py --no-show` | 20.0 ms/帧                  |
 
 只有完成上述四层测量，才能得出"瓶颈位于何处"的有效结论。在本实验中，**链路层耗时（20.0 ms）的构成中，引擎层仅占约 5%，绑定层约占 18%，其余约 77% 位于预处理与后处理**。
 
@@ -560,16 +561,16 @@ if is_trt11 and (use_fp16 or calibrate):
 
 **表 15 · 局限性清单**
 
-| 类别 | 具体限制 | 影响 |
-|---|---|---|
-| **精度评估缺失** | 本机无航拍标注数据集，未开展训练与消融实验 | **不存在任何 mAP / Recall 数据**；无法判断结构改进对检测效果的影响方向 |
-| **量化效果未充分验证** | QAT 仅在 `coco8` 数据集上执行单轮 smoke 训练 | 表 10 的数值偏差不可外推至充分训练的模型 |
-| **硬件单一性** | 全部实验在 RTX 4060 Laptop 单卡完成 | 结论（尤其是 INT8 与 FP16 的相对关系）依赖该 GPU 的算力配比，换硬件可能改变结论 |
-| **边缘平台未验证** | 未在 Jetson / 昇腾 / 瑞芯微等边缘设备上验证 | 无法断言结构改进与量化策略在边缘平台的适用性 |
-| **动态形状未测试** | 所有实验均为静态输入 $1\times3\times640\times640$ | 动态 batch / 分辨率下的性能特征未知 |
-| **引擎可移植性** | TensorRT 引擎与 TRT 版本 + GPU 架构强绑定 | 跨设备复用需重新构建 |
-| **测量方法差异** | `trtexec` 与 CUDA Graph 的绝对值存在 1.3–2.1 倍差异 | 跨方法比较无效，仅同方法内比较有效 |
-| **结构改进动机未验证** | 改进的设计依据来自航拍场景的定性分析 | 缺少精度证据支撑动机的合理性 |
+| 类别                   | 具体限制                                            | 影响                                                                            |
+| ---------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------- |
+| **精度评估缺失**       | 本机无航拍标注数据集，未开展训练与消融实验          | **不存在任何 mAP / Recall 数据**；无法判断结构改进对检测效果的影响方向          |
+| **量化效果未充分验证** | QAT 仅在 `coco8` 数据集上执行单轮 smoke 训练        | 表 10 的数值偏差不可外推至充分训练的模型                                        |
+| **硬件单一性**         | 全部实验在 RTX 4060 Laptop 单卡完成                 | 结论（尤其是 INT8 与 FP16 的相对关系）依赖该 GPU 的算力配比，换硬件可能改变结论 |
+| **边缘平台未验证**     | 未在 Jetson / 昇腾 / 瑞芯微等边缘设备上验证         | 无法断言结构改进与量化策略在边缘平台的适用性                                    |
+| **动态形状未测试**     | 所有实验均为静态输入 $1\times3\times640\times640$   | 动态 batch / 分辨率下的性能特征未知                                             |
+| **引擎可移植性**       | TensorRT 引擎与 TRT 版本 + GPU 架构强绑定           | 跨设备复用需重新构建                                                            |
+| **测量方法差异**       | `trtexec` 与 CUDA Graph 的绝对值存在 1.3–2.1 倍差异 | 跨方法比较无效，仅同方法内比较有效                                              |
+| **结构改进动机未验证** | 改进的设计依据来自航拍场景的定性分析                | 缺少精度证据支撑动机的合理性                                                    |
 
 **关于结果可复现性：** 表 6 – 表 13 的全部数据均可通过第 9 节的命令复现。由于 GPU 时钟状态与机器负载会影响绝对值，建议关注**相对比值**而非绝对数值，并在同一时间窗口内完成对比实验。
 
@@ -594,7 +595,7 @@ pip install ultralytics nvidia-modelopt onnx onnxruntime onnxslim
 pip install onnx-graphsurgeon onnxscript lief onnxconverter-common polygraphy
 
 # 将 TensorRT SDK 加入环境变量
-cat >> ~/.bashrc <<'EOF'
+cat >> ~/.bashrc << 'EOF'
 export TRT_HOME=/path/to/TensorRT-11.0.0.114
 export PATH="$TRT_HOME/bin:$PATH"
 export LD_LIBRARY_PATH="$TRT_HOME/lib:$LD_LIBRARY_PATH"
@@ -610,7 +611,7 @@ conda activate trt
 python check_cgba.py
 
 # 基线对比实验（ONNX 导出 → TensorRT 构建 → 延迟 → 数值一致性）
-python bench_trt.py --cfg ultralytics/cfg/models/26/yolo26.yaml       --tag base
+python bench_trt.py --cfg ultralytics/cfg/models/26/yolo26.yaml --tag base
 python bench_trt.py --cfg ultralytics/cfg/models/26/yolo26-cgba.yaml --tag cgba
 
 # FP16 版本：追加 --quantize 16
@@ -625,7 +626,7 @@ conda activate trt
 yolo export model=yolo26n.pt format=onnx imgsz=640
 
 # ② 生成 FP16 ONNX（keep_io_types 保持 I/O 为 FP32）
-python - <<'PY'
+python - << 'PY'
 import onnx
 from onnxconverter_common import float16
 m = float16.convert_float_to_float16(onnx.load("yolo26n.onnx"), keep_io_types=True)
@@ -642,7 +643,7 @@ trtexec --loadEngine=yolo26n-fp16.engine --avgRuns=300 --warmUp=2000 --iteration
 python bench_engine.py
 
 # ⑥ 数值一致性比对
-python compare_engines.py yolo26n-my.engine yolo26n-fp16.engine <other.engine> ...
+python compare_engines.py yolo26n-my.engine yolo26n-fp16.engine < other.engine > ...
 ```
 
 ### 9.4 QAT 与 INT8 复现
@@ -661,7 +662,7 @@ python check_qat_onnx.py runs/detect/runs/qat/smoke/weights/best.onnx
 
 # ④ 构建引擎
 trtexec --onnx=runs/detect/runs/qat/smoke/weights/best.onnx \
-        --saveEngine=runs/detect/runs/qat/smoke/weights/best-int8.engine
+  --saveEngine=runs/detect/runs/qat/smoke/weights/best-int8.engine
 
 # ⑤ 可选：叠加 FP16 AutoCast，消除 INT8↔FP32 转换开销
 python qat_onnx_fp16cast.py runs/detect/runs/qat/smoke/weights/best.onnx
@@ -672,10 +673,11 @@ python qat_onnx_fp16cast.py runs/detect/runs/qat/smoke/weights/best.onnx
 ```bash
 conda activate trt
 
-python trt_webcam.py --engine <engine> --source test_cam.mp4 --no-show
+python trt_webcam.py --engine test_cam.mp4 --no-show < engine > --source
 ```
 
 > **WSL 摄像头前置条件**（否则无法采集帧）：
+>
 > 1. Windows 管理员 PowerShell 中转发 USB 设备：`usbipd list` → `usbipd bind --busid <ID>` → `usbipd attach --wsl --busid <ID>`
 > 2. 用户需加入 `video` 组：`sudo usermod -aG video $USER`（需重启 WSL）
 > 3. 采集端必须设置为 **MJPG 编码 + 显式分辨率**，默认 YUYV 格式会因带宽不足触发 `select() timeout`
@@ -688,43 +690,43 @@ python trt_webcam.py --engine <engine> --source test_cam.mp4 --no-show
 
 **表 A1 · 结构改进相关**
 
-| 文件 | 功能 |
-|---|---|
-| `ultralytics/nn/modules/cgba.py` | `LBDown` 与 `CGBlockAttn` 模块实现 |
-| `ultralytics/cfg/models/26/yolo26-cgba.yaml` | 改进后的网络配置 |
-| `check_cgba.py` | 结构自检：前向、参数量、GFLOPs、延迟、显存 |
-| `bench_trt.py` | ONNX 导出 → TensorRT 构建 → 延迟 → 数值一致性 |
-| `cgba_attn_trace.py` | `CGBlockAttn` 逐步骤张量形状追踪 |
-| `cgba_infer.py` | 结构与推理演示 |
-| `export_cgba_onnx.py` | ONNX 导出工具 |
+| 文件                                         | 功能                                          |
+| -------------------------------------------- | --------------------------------------------- |
+| `ultralytics/nn/modules/cgba.py`             | `LBDown` 与 `CGBlockAttn` 模块实现            |
+| `ultralytics/cfg/models/26/yolo26-cgba.yaml` | 改进后的网络配置                              |
+| `check_cgba.py`                              | 结构自检：前向、参数量、GFLOPs、延迟、显存    |
+| `bench_trt.py`                               | ONNX 导出 → TensorRT 构建 → 延迟 → 数值一致性 |
+| `cgba_attn_trace.py`                         | `CGBlockAttn` 逐步骤张量形状追踪              |
+| `cgba_infer.py`                              | 结构与推理演示                                |
+| `export_cgba_onnx.py`                        | ONNX 导出工具                                 |
 
 **表 A2 · 部署与基准相关**
 
-| 文件 | 运行环境 | 功能 |
-|---|---|---|
-| `trt_infer_pure.py` | `trt` | 纯 TensorRT API 推理实现 |
-| `trt_webcam.py` | `trt` | 端到端实时检测（摄像头 / 视频） |
-| `bench_engine.py` | `trt` | 分层延迟基准（CUDA Graph + H2D/D2H 拆解） |
-| `inspect_engine.py` | `trt` | 引擎反序列化与属性查询 |
-| `compare_engines.py` | `trt` | 多引擎数值一致性比对 |
-| `diag_overhead.py` | `trt` | Python → CUDA 调用开销对照实验 |
-| `probe_cam.py` | `trt` | WSL 摄像头能力探测 |
-| `tensorRT-test.py` | `trt` | TensorRT 环境冒烟测试 |
+| 文件                 | 运行环境 | 功能                                      |
+| -------------------- | -------- | ----------------------------------------- |
+| `trt_infer_pure.py`  | `trt`    | 纯 TensorRT API 推理实现                  |
+| `trt_webcam.py`      | `trt`    | 端到端实时检测（摄像头 / 视频）           |
+| `bench_engine.py`    | `trt`    | 分层延迟基准（CUDA Graph + H2D/D2H 拆解） |
+| `inspect_engine.py`  | `trt`    | 引擎反序列化与属性查询                    |
+| `compare_engines.py` | `trt`    | 多引擎数值一致性比对                      |
+| `diag_overhead.py`   | `trt`    | Python → CUDA 调用开销对照实验            |
+| `probe_cam.py`       | `trt`    | WSL 摄像头能力探测                        |
+| `tensorRT-test.py`   | `trt`    | TensorRT 环境冒烟测试                     |
 
 **表 A3 · 量化相关**
 
-| 文件 | 运行环境 | 功能 |
-|---|---|---|
-| `check_qat_onnx.py` | `base` | ONNX 量化形态检查（Q/DQ 数量、权重 dtype） |
-| `qat_onnx_fp16cast.py` | `base` | 在 Q/DQ 图上叠加 FP16 AutoCast |
+| 文件                   | 运行环境 | 功能                                       |
+| ---------------------- | -------- | ------------------------------------------ |
+| `check_qat_onnx.py`    | `base`   | ONNX 量化形态检查（Q/DQ 数量、权重 dtype） |
+| `qat_onnx_fp16cast.py` | `base`   | 在 Q/DQ 图上叠加 FP16 AutoCast             |
 
 **表 A4 · 文档**
 
-| 文件 | 内容 |
-|---|---|
-| `CGBA_GUIDE.md` | 改动索引（含行号）、模块设计、配置接线、实测数据 |
-| `EXPERIMENT_NOTES.md` | 实验过程记录与部署困难清单 |
-| `README.upstream.md` | 上游框架原始 README（保留备查） |
+| 文件                  | 内容                                             |
+| --------------------- | ------------------------------------------------ |
+| `CGBA_GUIDE.md`       | 改动索引（含行号）、模块设计、配置接线、实测数据 |
+| `EXPERIMENT_NOTES.md` | 实验过程记录与部署困难清单                       |
+| `README.upstream.md`  | 上游框架原始 README（保留备查）                  |
 
 ### 附录 B · 工程问题记录
 
@@ -732,48 +734,48 @@ python trt_webcam.py --engine <engine> --source test_cam.mp4 --no-show
 
 **表 B1 · 工程问题与解决方案**
 
-| 编号 | 问题 | 现象 | 解决方案 |
-|---|---|---|---|
-| B1 | TensorRT 11 无构建期精度开关 | `trtexec --fp16` 报 `Unknown option` | 精度在 ONNX 导出阶段确定 |
-| B2 | Python 绑定调用开销 | Python 实测 4.7 ms，`trtexec` 报告 1.3 ms | 用 `trtexec` 测量；Python 侧改用 CUDA Graph |
-| B3 | **`--memPoolSize` 单位解析异常** | 指定 `workspace:2048MiB` 后构建失败，报 `ForeignNode ... insufficient workspace`；日志显示 workspace 实际为 2 048 **字节** | 不指定该参数，使用默认值 |
-| B4 | QAT 模型不触发 FP16 AutoCast | INT8 引擎慢于 FP16 引擎 | 手动叠加 AutoCast |
-| B5 | CUDA Graph 流不匹配 | 测得 0.019 ms / 53 983 FPS 的错误结果 | `with torch.cuda.stream(s): g.replay()` |
-| B6 | modelopt 与 tensorrt 环境冲突 | 安装 modelopt 导致 torch 2.6.0 → 2.14.0 并引入 CUDA 13 依赖 | 拆分环境 |
-| B7 | `GridSample` 的 opset 要求 | opset < 16 无法导出 | 使用 opset 17 |
-| B8 | `thop.profile` 设备一致性 | `Input type ... and weight type ...` | 在 `.to("cuda")` 之前统计 FLOPs |
-| B9 | 引擎平台绑定 | 跨设备加载失败 | 更换设备后需重新构建 |
-| B10 | 构建期基准口径不一致 | 构建日志中的吞吐量不可用于对比 | 统一使用 `--loadEngine` |
-| B11 | 裸转换引擎缺失元数据 | 类别名显示为 `class0` / `class5` | 手动提供类别名，或使用框架导出接口 |
-| B12 | 网络配置索引未同步 | 静默产生错误的特征拼接 | 逐项检查 head 中所有 `Concat` 的 `from` 字段 |
-| B13 | 模块注册不完整 | 模型可运行但不参与 width 缩放 | 同时注册 `__init__.py` 与 `base_modules` |
-| B14 | WSL 摄像头默认格式超时 | `select() timeout`，无法采集帧 | 设置 MJPG 编码与显式分辨率 |
-| B15 | 框架导出参数变更 | `half=True` 已弃用 | 使用 `quantize=16` / `quantize=8` |
+| 编号 | 问题                             | 现象                                                                                                                       | 解决方案                                     |
+| ---- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| B1   | TensorRT 11 无构建期精度开关     | `trtexec --fp16` 报 `Unknown option`                                                                                       | 精度在 ONNX 导出阶段确定                     |
+| B2   | Python 绑定调用开销              | Python 实测 4.7 ms，`trtexec` 报告 1.3 ms                                                                                  | 用 `trtexec` 测量；Python 侧改用 CUDA Graph  |
+| B3   | **`--memPoolSize` 单位解析异常** | 指定 `workspace:2048MiB` 后构建失败，报 `ForeignNode ... insufficient workspace`；日志显示 workspace 实际为 2 048 **字节** | 不指定该参数，使用默认值                     |
+| B4   | QAT 模型不触发 FP16 AutoCast     | INT8 引擎慢于 FP16 引擎                                                                                                    | 手动叠加 AutoCast                            |
+| B5   | CUDA Graph 流不匹配              | 测得 0.019 ms / 53 983 FPS 的错误结果                                                                                      | `with torch.cuda.stream(s): g.replay()`      |
+| B6   | modelopt 与 tensorrt 环境冲突    | 安装 modelopt 导致 torch 2.6.0 → 2.14.0 并引入 CUDA 13 依赖                                                                | 拆分环境                                     |
+| B7   | `GridSample` 的 opset 要求       | opset < 16 无法导出                                                                                                        | 使用 opset 17                                |
+| B8   | `thop.profile` 设备一致性        | `Input type ... and weight type ...`                                                                                       | 在 `.to("cuda")` 之前统计 FLOPs              |
+| B9   | 引擎平台绑定                     | 跨设备加载失败                                                                                                             | 更换设备后需重新构建                         |
+| B10  | 构建期基准口径不一致             | 构建日志中的吞吐量不可用于对比                                                                                             | 统一使用 `--loadEngine`                      |
+| B11  | 裸转换引擎缺失元数据             | 类别名显示为 `class0` / `class5`                                                                                           | 手动提供类别名，或使用框架导出接口           |
+| B12  | 网络配置索引未同步               | 静默产生错误的特征拼接                                                                                                     | 逐项检查 head 中所有 `Concat` 的 `from` 字段 |
+| B13  | 模块注册不完整                   | 模型可运行但不参与 width 缩放                                                                                              | 同时注册 `__init__.py` 与 `base_modules`     |
+| B14  | WSL 摄像头默认格式超时           | `select() timeout`，无法采集帧                                                                                             | 设置 MJPG 编码与显式分辨率                   |
+| B15  | 框架导出参数变更                 | `half=True` 已弃用                                                                                                         | 使用 `quantize=16` / `quantize=8`            |
 
 ### 附录 C · 符号表
 
-| 符号 | 含义 |
-|---|---|
-| $c_1, c_2$ | 模块输入 / 输出通道数 |
-| $b$ | `CGBlockAttn` 的块边长（默认 8） |
-| $h$ | 注意力头数（默认 4） |
-| $\theta_k$ | 第 $k$ 个采样点的可学习空间先验 |
-| $\lambda$ | 可学习对数带宽，$\sigma = e^{\lambda}$ |
-| $g(\cdot)$ | 强度响应函数 |
-| $\mathcal{P}_b$ | 块级平均池化算子 |
-| $\odot$ | 逐元素乘法（Hadamard 积） |
+| 符号            | 含义                                   |
+| --------------- | -------------------------------------- |
+| $c_1, c_2$      | 模块输入 / 输出通道数                  |
+| $b$             | `CGBlockAttn` 的块边长（默认 8）       |
+| $h$             | 注意力头数（默认 4）                   |
+| $\theta_k$      | 第 $k$ 个采样点的可学习空间先验        |
+| $\lambda$       | 可学习对数带宽，$\sigma = e^{\lambda}$ |
+| $g(\cdot)$      | 强度响应函数                           |
+| $\mathcal{P}_b$ | 块级平均池化算子                       |
+| $\odot$         | 逐元素乘法（Hadamard 积）              |
 
 ---
 
 ## 11 参考文献
 
-1. Ultralytics. *Ultralytics YOLO Documentation*. https://docs.ultralytics.com
-2. NVIDIA. *TensorRT Developer Guide — Strongly Typed Networks*. https://docs.nvidia.com/deeplearning/tensorrt/
-3. NVIDIA. *Model Optimizer (ModelOpt) Documentation*. https://github.com/NVIDIA/Model-Optimizer
-4. Tomasi, C., Manduchi, R. *Bilateral Filtering for Gray and Color Images*. ICCV, 1998.
-5. Jaderberg, M., Simonyan, K., Zisserman, A., Kavukcuoglu, K. *Spatial Transformer Networks*. NeurIPS, 2015.
-6. Vaswani, A., et al. *Attention Is All You Need*. NeurIPS, 2017.
-7. Wu, Y., et al. *CrowdDet: Detection in Crowded Scenes*. CVPR, 2020.
+1. Ultralytics. _Ultralytics YOLO Documentation_. https://docs.ultralytics.com
+2. NVIDIA. _TensorRT Developer Guide — Strongly Typed Networks_. https://docs.nvidia.com/deeplearning/tensorrt/
+3. NVIDIA. _Model Optimizer (ModelOpt) Documentation_. https://github.com/NVIDIA/Model-Optimizer
+4. Tomasi, C., Manduchi, R. _Bilateral Filtering for Gray and Color Images_. ICCV, 1998.
+5. Jaderberg, M., Simonyan, K., Zisserman, A., Kavukcuoglu, K. _Spatial Transformer Networks_. NeurIPS, 2015.
+6. Vaswani, A., et al. _Attention Is All You Need_. NeurIPS, 2017.
+7. Wu, Y., et al. _CrowdDet: Detection in Crowded Scenes_. CVPR, 2020.
 
 ---
 
@@ -793,6 +795,6 @@ python trt_webcam.py --engine <engine> --source test_cam.mp4 --no-show
 
 **— 文档结束 —**
 
-*全部数据于 2026-09 在 NVIDIA RTX 4060 Laptop 上实测获得。本工作不包含精度评估，相关结论仅限于计算开销、延迟、显存与数值一致性范畴。*
+_全部数据于 2026-09 在 NVIDIA RTX 4060 Laptop 上实测获得。本工作不包含精度评估，相关结论仅限于计算开销、延迟、显存与数值一致性范畴。_
 
 </div>
