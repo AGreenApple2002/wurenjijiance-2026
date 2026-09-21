@@ -21,11 +21,11 @@ import numpy as np
 import tensorrt as trt
 import torch
 
-ENGINE = "yolo26n-my.engine"          # your TensorRT engine
-IMGSZ = 640                          # network input size
-IMG = "ultralytics/assets/bus.jpg"   # test image
-CONF = 0.25                          # confidence threshold
-IOU = 0.45                           # NMS IoU threshold
+ENGINE = "yolo26n-my.engine"  # your TensorRT engine
+IMGSZ = 640  # network input size
+IMG = "ultralytics/assets/bus.jpg"  # test image
+CONF = 0.25  # confidence threshold
+IOU = 0.45  # NMS IoU threshold
 
 
 def preprocess(img_bgr: np.ndarray) -> np.ndarray:
@@ -113,10 +113,10 @@ def main() -> None:
     print(f"TensorRT forward: {start.elapsed_time(end) / 20:.2f} ms/image")
 
     # --- 5. decode output = (1, 84, 8400): rows0-3 = cx,cy,w,h  rows4-83 = scores
-    out = d_out.cpu().numpy()[0]           # (84, 8400)
-    boxes_xywh = out[:4, :].T              # (8400, 4)
-    class_scores = out[4:, :].T            # (8400, 80)
-    conf = class_scores.max(axis=1)        # best class score per anchor
+    out = d_out.cpu().numpy()[0]  # (84, 8400)
+    boxes_xywh = out[:4, :].T  # (8400, 4)
+    class_scores = out[4:, :].T  # (8400, 80)
+    conf = class_scores.max(axis=1)  # best class score per anchor
     cls = class_scores.argmax(axis=1)
 
     mask = conf > CONF

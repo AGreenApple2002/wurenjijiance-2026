@@ -1,4 +1,4 @@
-"""CGBlockAttn.forward 逐步形状追踪（用于讲解，不参与推理）。"""
+"""CGBlockAttn.forward 逐步形状追踪（用于讲解，不参与推理）。."""
 
 import math
 
@@ -10,7 +10,7 @@ from ultralytics.nn.modules import CGBlockAttn
 def trace(c1, h, w, block=8, heads=4):
     m = CGBlockAttn(c1, c1, block=block, num_heads=heads).eval()
     x = torch.randn(1, c1, h, w)
-    print(f"\n{'='*70}\n输入 x = {tuple(x.shape)}  |  block={block} heads={heads} hidden={m.hidden}\n{'='*70}")
+    print(f"\n{'=' * 70}\n输入 x = {tuple(x.shape)}  |  block={block} heads={heads} hidden={m.hidden}\n{'=' * 70}")
 
     b = 1
     # --- Q/K/V 投影 ---
@@ -23,8 +23,8 @@ def trace(c1, h, w, block=8, heads=4):
     v, _ = m._to_tokens(vmap)
     N = q.shape[-1]
     print(f"[2] _to_tokens 分块平均  : {tuple(q.shape)}")
-    print(f"    pad 后尺寸 {hp}x{wp} -> 网格 {hp//block}x{wp//block} = N={N} 个 token")
-    print(f"    token 数 {N} vs 像素数 {h*w}  ->  压缩 {h*w/N:.0f} 倍")
+    print(f"    pad 后尺寸 {hp}x{wp} -> 网格 {hp // block}x{wp // block} = N={N} 个 token")
+    print(f"    token 数 {N} vs 像素数 {h * w}  ->  压缩 {h * w / N:.0f} 倍")
 
     # --- 多头注意力 ---
     n = q.shape[-1]
@@ -54,7 +54,9 @@ def trace(c1, h, w, block=8, heads=4):
     # --- 门控残差 ---
     g = torch.sigmoid(m.gate(x))
     gb = m.gate.bias.detach().float().mean().item()
-    print(f"[9] gate = sigmoid(conv(x)): {tuple(g.shape)}   bias均值={gb:.1f} -> sigmoid={torch.sigmoid(torch.tensor(gb)).item():.3f}")
+    print(
+        f"[9] gate = sigmoid(conv(x)): {tuple(g.shape)}   bias均值={gb:.1f} -> sigmoid={torch.sigmoid(torch.tensor(gb)).item():.3f}"
+    )
     out_final = x + y * g
     print(f"[10] 输出 = x + y * gate  : {tuple(out_final.shape)}")
 

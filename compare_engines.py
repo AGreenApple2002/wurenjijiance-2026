@@ -21,8 +21,11 @@ def run(path, x):
     engine, ctx = load(path)
     name_in = engine.get_tensor_name(0)
     ctx.set_input_shape(name_in, tuple(x.shape))
-    out_names = [engine.get_tensor_name(i) for i in range(engine.num_io_tensors)
-                 if engine.get_tensor_mode(engine.get_tensor_name(i)) == trt.TensorIOMode.OUTPUT]
+    out_names = [
+        engine.get_tensor_name(i)
+        for i in range(engine.num_io_tensors)
+        if engine.get_tensor_mode(engine.get_tensor_name(i)) == trt.TensorIOMode.OUTPUT
+    ]
     name_out = out_names[0]
     out_shape = tuple(ctx.get_tensor_shape(name_out))
 

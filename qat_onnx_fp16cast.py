@@ -34,8 +34,10 @@ def main():
     from collections import Counter
 
     ops = Counter(n.op_type for n in out.graph.node)
-    print(f"   节点 {len(out.graph.node)} | QuantizeLinear {ops.get('QuantizeLinear', 0)} | "
-          f"DequantizeLinear {ops.get('DequantizeLinear', 0)}")
+    print(
+        f"   节点 {len(out.graph.node)} | QuantizeLinear {ops.get('QuantizeLinear', 0)} | "
+        f"DequantizeLinear {ops.get('DequantizeLinear', 0)}"
+    )
 
 
 if __name__ == "__main__":
