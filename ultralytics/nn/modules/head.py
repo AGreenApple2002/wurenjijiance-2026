@@ -137,7 +137,9 @@ class Detect(nn.Module):
         )
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
-        if end2end:  # 这里end2end为false只是说 是否要实例化一个端到端cv2头和端到端cv3的头，不是指模型预测就用不用端到端预测头。
+        if (
+            end2end
+        ):  # 这里end2end为false只是说 是否要实例化一个端到端cv2头和端到端cv3的头，不是指模型预测就用不用端到端预测头。
             self.one2one_cv2 = copy.deepcopy(self.cv2)
             self.one2one_cv3 = copy.deepcopy(self.cv3)
 

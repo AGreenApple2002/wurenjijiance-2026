@@ -1,5 +1,5 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
-"""CGBA 结构（LBDown + CGBlockAttn）推理演示脚本。
+"""CGBA 结构（LBDown + CGBlockAttn）推理演示脚本。.
 
 ⚠️ 重要前提
     本脚本**不做训练**，所以：
@@ -28,7 +28,7 @@ CFG = "ultralytics/cfg/models/26/yolo26-cgba.yaml"
 
 
 def describe_structure(model) -> None:
-    """打印 CGBA 模块数量与参数量，确认自定义层真的进了网络。"""
+    """打印 CGBA 模块数量与参数量，确认自定义层真的进了网络。."""
     names = {}
     for m in model.model.modules():
         n = type(m).__name__
@@ -40,7 +40,7 @@ def describe_structure(model) -> None:
 
 
 def raw_forward_stats(model, imgsz: int = 640) -> None:
-    """跑一次原始前向，打印 output0 的数值分布（判断模型是否"有话说"）。"""
+    """跑一次原始前向，打印 output0 的数值分布（判断模型是否"有话说"）。."""
     net = model.model.eval()
     x = torch.zeros(1, 3, imgsz, imgsz)
     with torch.no_grad():
@@ -60,7 +60,7 @@ def raw_forward_stats(model, imgsz: int = 640) -> None:
 
 
 def try_load_weights(model, weights: str) -> None:
-    """尝试部分迁移预训练权重，报告匹配率。"""
+    """尝试部分迁移预训练权重，报告匹配率。."""
     sd = torch.load(weights, map_location="cpu", weights_only=False)["model"].state_dict()
     new = model.model.state_dict()
     matched = {k: v for k, v in sd.items() if k in new and v.shape == new[k].shape}
@@ -101,7 +101,7 @@ def main() -> None:
         conf = res.boxes.conf.cpu().numpy()
         print(f"  置信度   : {conf.min():.4f} ~ {conf.max():.4f}")
         print("             ⚠️ 未训练模型的框是随机噪声，不具备检测意义")
-    print(f"  耗时     : " + ", ".join(f"{k}={v:.1f}ms" for k, v in res.speed.items()))
+    print("  耗时     : " + ", ".join(f"{k}={v:.1f}ms" for k, v in res.speed.items()))
     if args.save:
         res.save(filename="cgba_infer_result.jpg")
         print("  已保存   : cgba_infer_result.jpg")

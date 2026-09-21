@@ -58,15 +58,86 @@ SHOW = True  # set False for headless (no cv2.imshow)
 # trtexec 裸转出来的 engine **不带 metadata**（既无 task 也无 names），
 # 不填这个列表只会显示 cls0 / cls5；填了才显示 person / bus。
 COCO_NAMES = [
-    "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
-    "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow",
-    "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee",
-    "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard",
-    "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple",
-    "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
-    "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard",
-    "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase",
-    "scissors", "teddy bear", "hair drier", "toothbrush",
+    "person",
+    "bicycle",
+    "car",
+    "motorcycle",
+    "airplane",
+    "bus",
+    "train",
+    "truck",
+    "boat",
+    "traffic light",
+    "fire hydrant",
+    "stop sign",
+    "parking meter",
+    "bench",
+    "bird",
+    "cat",
+    "dog",
+    "horse",
+    "sheep",
+    "cow",
+    "elephant",
+    "bear",
+    "zebra",
+    "giraffe",
+    "backpack",
+    "umbrella",
+    "handbag",
+    "tie",
+    "suitcase",
+    "frisbee",
+    "skis",
+    "snowboard",
+    "sports ball",
+    "kite",
+    "baseball bat",
+    "baseball glove",
+    "skateboard",
+    "surfboard",
+    "tennis racket",
+    "bottle",
+    "wine glass",
+    "cup",
+    "fork",
+    "knife",
+    "spoon",
+    "bowl",
+    "banana",
+    "apple",
+    "sandwich",
+    "orange",
+    "broccoli",
+    "carrot",
+    "hot dog",
+    "pizza",
+    "donut",
+    "cake",
+    "chair",
+    "couch",
+    "potted plant",
+    "bed",
+    "dining table",
+    "toilet",
+    "tv",
+    "laptop",
+    "mouse",
+    "remote",
+    "keyboard",
+    "cell phone",
+    "microwave",
+    "oven",
+    "toaster",
+    "sink",
+    "refrigerator",
+    "book",
+    "clock",
+    "vase",
+    "scissors",
+    "teddy bear",
+    "hair drier",
+    "toothbrush",
 ]
 CLASSES = COCO_NAMES  # 设成 None 则退回显示 "cls{id}"
 
@@ -101,7 +172,7 @@ class TRTDetector:
         self.context.set_tensor_address(self.out_name, self.d_out.data_ptr())
 
     def infer(self, x: np.ndarray) -> np.ndarray:
-        """x: (1,3,H,W) float32 numpy in [0,1]. Returns raw output (1,84,8400)."""
+        """X: (1,3,H,W) float32 numpy in [0,1]. Returns raw output (1,84,8400)."""
         self.d_in.copy_(torch.from_numpy(x), non_blocking=True)
         self.context.execute_async_v3(self.stream.cuda_stream)
         self.stream.synchronize()
@@ -204,7 +275,9 @@ def main() -> None:
 
     cap = cv2.VideoCapture(SRC)
     if not cap.isOpened():
-        raise SystemExit(f"cannot open source {SRC!r}. On WSL forward the webcam via usbipd, or set SRC to a video/RTSP.")
+        raise SystemExit(
+            f"cannot open source {SRC!r}. On WSL forward the webcam via usbipd, or set SRC to a video/RTSP."
+        )
     if isinstance(SRC, int):
         # WSL/usbipd webcams only stream reliably as MJPG at an explicit resolution;
         # the default YUYV path stalls with `select() timeout`.
