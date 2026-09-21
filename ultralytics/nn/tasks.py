@@ -1991,8 +1991,8 @@ def load_checkpoint(weight, device=None, inplace=True, fuse=False):
 
 
 def parse_model(d, ch, verbose=True):
-    """Parse a YOLO model.yaml dictionary into a PyTorch model.
-        通过重写YAML 文件，该方法自动重建网络。
+    """Parse a YOLO model.yaml dictionary into a PyTorch model. 通过重写YAML 文件，该方法自动重建网络。.
+
     Args:
         d (dict): Model dictionary.
         ch (int): Input channels.

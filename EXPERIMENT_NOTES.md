@@ -5,13 +5,13 @@
 
 ## 1. 环境
 
-| 项目 | 值 |
-|---|---|
-| GPU | NVIDIA GeForce RTX 4060 Laptop (8 GB, Ada) |
-| 系统 | WSL2 + Linux |
-| 训练/导出环境 | conda `trt`：Python 3.12.14，torch 2.6.0+cu124 |
-| TensorRT | 11.0.0.114（完整 SDK，`trtexec` 命令行构建） |
-| ultralytics | 8.4.143（本地克隆，项目根目录 `ultralytics-main`） |
+| 项目          | 值                                                 |
+| ------------- | -------------------------------------------------- |
+| GPU           | NVIDIA GeForce RTX 4060 Laptop (8 GB, Ada)         |
+| 系统          | WSL2 + Linux                                       |
+| 训练/导出环境 | conda `trt`：Python 3.12.14，torch 2.6.0+cu124     |
+| TensorRT      | 11.0.0.114（完整 SDK，`trtexec` 命令行构建）       |
+| ultralytics   | 8.4.143（本地克隆，项目根目录 `ultralytics-main`） |
 
 ## 2. 改动内容
 
@@ -31,30 +31,30 @@
 
 ## 3. 结构开销（imgsz=640，fp32，batch=1）
 
-| 配置 | 参数量 | GFLOPs | PyTorch 延迟 | 峰值显存 |
-|---|---|---|---|---|
-| baseline `yolo26n` | 2.572 M | 6.12 | 19.72 ms | 83.5 MiB |
+| 配置                   | 参数量          | GFLOPs      | PyTorch 延迟    | 峰值显存        |
+| ---------------------- | --------------- | ----------- | --------------- | --------------- |
+| baseline `yolo26n`     | 2.572 M         | 6.12        | 19.72 ms        | 83.5 MiB        |
 | `+LBDown +CGBlockAttn` | 2.669 M (+3.8%) | 7.04 (+15%) | 27.45 ms (+39%) | 95.8 MiB (+15%) |
 
 ## 4. TensorRT 实测（trtexec `--loadEngine`，200 iters，GPU Compute Time 中位数）
 
-| engine | 精度 | GPU 延迟 | 相对基线 |
-|---|---|---|---|
-| `base-fp32` `yolo26n` | fp32 | **2.05 ms** | 1.00x |
-| `cgba-fp32` | fp32 | **2.88 ms** | 1.41x |
-| `base-q16` | fp16 | **1.07 ms** | 1.00x（相对 fp32 **1.92x 加速**） |
-| `cgba-q16` | fp16 | **1.65 ms** | 1.55x |
+| engine                | 精度 | GPU 延迟    | 相对基线                          |
+| --------------------- | ---- | ----------- | --------------------------------- |
+| `base-fp32` `yolo26n` | fp32 | **2.05 ms** | 1.00x                             |
+| `cgba-fp32`           | fp32 | **2.88 ms** | 1.41x                             |
+| `base-q16`            | fp16 | **1.07 ms** | 1.00x（相对 fp32 **1.92x 加速**） |
+| `cgba-q16`            | fp16 | **1.65 ms** | 1.55x                             |
 
 ONNX 规模：base 9.4 MiB(fp32) / 4.8 MiB(fp16)；cgba 9.8 MiB(fp32) / 5.0 MiB(fp16)。
 
 ## 5. 数值一致性（TensorRT vs PyTorch，同一输入）
 
-| 配置 | max\|Δ\| | max relative |
-|---|---|---|
-| base fp32 | 3.05e-05 | 1.55e-06 |
-| cgba fp32 | 1.83e-04 | 7.51e-06 |
-| base fp16 | 1.53e-05 | 1.92e-03 |
-| cgba fp16 | 1.22e-04 | 1.92e-03 |
+| 配置      | max\|Δ\| | max relative |
+| --------- | -------- | ------------ |
+| base fp32 | 3.05e-05 | 1.55e-06     |
+| cgba fp32 | 1.83e-04 | 7.51e-06     |
+| base fp16 | 1.53e-05 | 1.92e-03     |
+| cgba fp16 | 1.22e-04 | 1.92e-03     |
 
 结论：LBDown 的 `grid_sample` 让 TRT 与 PyTorch 的偏差放大约 6 倍（3e-5 → 1.8e-4），
 量级仍可忽略，但说明**非标准算子必须做一致性比对，不能只看"跑得通"**。
@@ -79,9 +79,9 @@ ONNX 规模：base 9.4 MiB(fp32) / 4.8 MiB(fp16)；cgba 9.8 MiB(fp32) / 5.0 MiB(
 ## 7. 复现命令
 
 ```bash
-conda run -n trt python check_cgba.py                         # 结构自检 + 参数量/延迟
+conda run -n trt python check_cgba.py # 结构自检 + 参数量/延迟
 conda run -n trt python bench_trt.py --cfg ultralytics/cfg/models/26/yolo26-cgba.yaml --tag cgba
-conda run -n trt python bench_trt.py --cfg ultralytics/cfg/models/26/yolo26.yaml       --tag base
+conda run -n trt python bench_trt.py --cfg ultralytics/cfg/models/26/yolo26.yaml --tag base
 # fp16 版本：追加 --quantize 16
 ```
 

@@ -8,12 +8,12 @@
 
 ## 自定义改动速查
 
-| 类型 | 路径 |
-|---|---|
-| 新增模块 | `ultralytics/nn/modules/cgba.py`（`LBDown` 可学习双边下采样、`CGBlockAttn` 粗粒度块注意力） |
-| 新增配置 | `ultralytics/cfg/models/26/yolo26-cgba.yaml` |
-| 注册点 | `ultralytics/nn/modules/__init__.py`（L63/L120/L168）、`ultralytics/nn/tasks.py`（L44/L61、L2068-2069 的 `base_modules`） |
-| 实验脚本 | `check_cgba.py`、`bench_trt.py`、`export_cgba_onnx.py`、`tensorRT-test.py`、`trt_infer_pure.py`、`trt_webcam.py` |
+| 类型     | 路径                                                                                                                      |
+| -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 新增模块 | `ultralytics/nn/modules/cgba.py`（`LBDown` 可学习双边下采样、`CGBlockAttn` 粗粒度块注意力）                               |
+| 新增配置 | `ultralytics/cfg/models/26/yolo26-cgba.yaml`                                                                              |
+| 注册点   | `ultralytics/nn/modules/__init__.py`（L63/L120/L168）、`ultralytics/nn/tasks.py`（L44/L61、L2068-2069 的 `base_modules`） |
+| 实验脚本 | `check_cgba.py`、`bench_trt.py`、`export_cgba_onnx.py`、`tensorRT-test.py`、`trt_infer_pure.py`、`trt_webcam.py`          |
 
 ## 环境
 

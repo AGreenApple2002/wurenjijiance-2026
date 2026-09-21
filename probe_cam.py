@@ -1,6 +1,7 @@
 # quick camera probe: try MJPG + explicit size, with retries
-import cv2
 import sys
+
+import cv2
 
 idx = int(sys.argv[1]) if len(sys.argv) > 1 else 0
 
@@ -10,7 +11,14 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 cap.set(cv2.CAP_PROP_FPS, 30)
 print("opened:", cap.isOpened())
-print("fourcc:", int(cap.get(cv2.CAP_PROP_FOURCC)), "size:", cap.get(cv2.CAP_PROP_FRAME_WIDTH), "x", cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+print(
+    "fourcc:",
+    int(cap.get(cv2.CAP_PROP_FOURCC)),
+    "size:",
+    cap.get(cv2.CAP_PROP_FRAME_WIDTH),
+    "x",
+    cap.get(cv2.CAP_PROP_FRAME_HEIGHT),
+)
 
 got = False
 for i in range(15):
